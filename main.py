@@ -66,7 +66,7 @@ for i in range(len(schedule[1:])):
 df = pd.DataFrame(gameSchedule)
 df.to_csv(OUTPUT_FILE_NAME, index=False)
 
-if EMAIL:
+if EMAIL and PASSWORD:
     driver.get("https://www.benchapp.com/schedule/import")
     driver.find_element(By.NAME, "email").send_keys(EMAIL)
     driver.find_element(By.NAME, "password").send_keys(PASSWORD)
