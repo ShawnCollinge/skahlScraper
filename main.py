@@ -37,10 +37,7 @@ for i in range(len(schedule[1:])):
     date = game.find_next("td")
     gameTime = date.find_next("td").find_next("td")
     rink = gameTime.find_next("td")
-    if rink.find_next("td").getText().lower() == teamName:
-        isHome = True
-    else:
-        isHome = False
+    isHome = rink.find_next("td").getText().lower() == teamName
     gameSchedule['Date'][i+1] = date.getText()
     gameSchedule['Time'][i+1] = gameTime.getText()
     gameSchedule['Rink'][i+1] = rink.getText()
