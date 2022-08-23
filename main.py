@@ -1,4 +1,4 @@
-import time
+import time, datetime
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
@@ -9,7 +9,10 @@ import pandas as pd
 
 URL =  "https://snokinghockeyleague.com/#/home/team/1079/2609"
 OUTPUT_FILE_NAME = "schedule.csv"
-TEAM_NAME = "mid ice crisis"
+GAME_DURATION = "1:30"
+TYPE = "GAME"
+GAME_TYPE = "REGULAR"
+
 
 options = Options()
 options.headless = True
@@ -25,23 +28,32 @@ results = MySoup.find(name="h4", text="Schedule").find_next(name="table")
 schedule = results.find_all("tr")
 
 gameSchedule = {
+                "Type": {},
+                "Game Type": {},
+                "Home": {},
+                "Away": {},
                 "Date": {}, 
                 "Time": {},
-                "Rink": {},
-                "Home": {}
+                "Duration": {},
+                "Location": {},
                 }
 
-teamName = TEAM_NAME.lower()
 for i in range(len(schedule[1:])):
     game = schedule[i+1]
     date = game.find_next("td")
     gameTime = date.find_next("td").find_next("td")
     rink = gameTime.find_next("td")
-    isHome = rink.find_next("td").getText().lower() == teamName
-    gameSchedule['Date'][i+1] = date.getText()
+    home = rink.find_next("td")
+    away = home.find_next("td")
+    date = datetime.datetime.strptime(date.getText(), "%m/%d/%Y").strftime("%d/%m/%Y")
+    gameSchedule['Type'][i+1] = TYPE
+    gameSchedule['Game Type'][i+1] = GAME_TYPE
+    gameSchedule['Home'][i+1] = home.getText()
+    gameSchedule['Away'][i+1] = away.getText()
+    gameSchedule['Date'][i+1] = date
     gameSchedule['Time'][i+1] = gameTime.getText()
-    gameSchedule['Rink'][i+1] = rink.getText()
-    gameSchedule['Home'][i+1] = isHome
+    gameSchedule['Duration'][i+1] = GAME_DURATION
+    gameSchedule['Location'][i+1] = rink.getText()
 
 df = pd.DataFrame(gameSchedule)
 df.to_csv(OUTPUT_FILE_NAME, index=False)
