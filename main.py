@@ -1,4 +1,5 @@
-import time, datetime
+import time
+from datetime import datetime
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
@@ -7,7 +8,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 import pandas as pd
 
-URL =  "https://snokinghockeyleague.com/#/home/team/1079/2609"
+URL =  "https://snokinghockeyleague.com/#/home/team/1081/2609" # enter team url here for the season
 OUTPUT_FILE_NAME = "schedule.csv"
 GAME_DURATION = "1:30"
 TYPE = "GAME"
@@ -37,23 +38,27 @@ gameSchedule = {
                 "Duration": {},
                 "Location": {},
                 }
-
+                
+today = datetime.now()
 for i in range(len(schedule[1:])):
     game = schedule[i+1]
-    date = game.find_next("td")
-    gameTime = date.find_next("td").find_next("td")
-    rink = gameTime.find_next("td")
-    home = rink.find_next("td")
-    away = home.find_next("td")
-    date = datetime.datetime.strptime(date.getText(), "%m/%d/%Y").strftime("%d/%m/%Y")
-    gameSchedule['Type'][i+1] = TYPE
-    gameSchedule['Game Type'][i+1] = GAME_TYPE
-    gameSchedule['Home'][i+1] = home.getText()
-    gameSchedule['Away'][i+1] = away.getText()
-    gameSchedule['Date'][i+1] = date
-    gameSchedule['Time'][i+1] = gameTime.getText()
-    gameSchedule['Duration'][i+1] = GAME_DURATION
-    gameSchedule['Location'][i+1] = rink.getText()
+    rawDate = game.find_next("td")
+    date = datetime.strptime(rawDate.getText(), "%m/%d/%Y")
+    if date.date() > today.date():
+        gameTime = rawDate.find_next("td").find_next("td")
+        rink = gameTime.find_next("td")
+        home = rink.find_next("td")
+        away = home.find_next("td")
+        gameSchedule['Type'][i+1] = TYPE
+        gameSchedule['Game Type'][i+1] = GAME_TYPE
+        gameSchedule['Home'][i+1] = home.getText()
+        gameSchedule['Away'][i+1] = away.getText()
+        gameSchedule['Date'][i+1] = date.strftime("%d/%m/%Y")
+        gameSchedule['Time'][i+1] = gameTime.getText()
+        gameSchedule['Duration'][i+1] = GAME_DURATION
+        gameSchedule['Location'][i+1] = rink.getText()
+    else:
+        continue
 
 df = pd.DataFrame(gameSchedule)
 df.to_csv(OUTPUT_FILE_NAME, index=False)
