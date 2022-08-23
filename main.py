@@ -11,7 +11,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 URL =  "https://snokinghockeyleague.com/#/home/team/1081/2609" # enter team url here for the season
-OUTPUT_FILE_NAME = "schedule.csv"
+TEAM = URL.split("/")[-1]
+OUTPUT_FILE_NAME = f"{TEAM}.csv"
 GAME_DURATION = "1:30"
 TYPE = "GAME"
 GAME_TYPE = "REGULAR"
