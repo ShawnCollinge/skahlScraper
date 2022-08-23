@@ -57,8 +57,6 @@ for i in range(len(schedule[1:])):
         gameSchedule['Time'][i+1] = gameTime.getText()
         gameSchedule['Duration'][i+1] = GAME_DURATION
         gameSchedule['Location'][i+1] = rink.getText()
-    else:
-        continue
 
 df = pd.DataFrame(gameSchedule)
 df.to_csv(OUTPUT_FILE_NAME, index=False)
