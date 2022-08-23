@@ -11,8 +11,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 URL =  "https://snokinghockeyleague.com/#/home/team/1081/2609" # enter team url here for the season
-TEAM = URL.split("/")[-1]
-OUTPUT_FILE_NAME = f"{TEAM}.csv"
 GAME_DURATION = "1:30"
 TYPE = "GAME"
 GAME_TYPE = "REGULAR"
@@ -31,6 +29,7 @@ html = driver.page_source
 MySoup = BeautifulSoup(html, "html.parser")
 results = MySoup.find(name="h4", text="Schedule").find_next(name="table")
 schedule = results.find_all("tr")
+fileName = f"{URL.split('/')[-1]}.csv"
 
 gameSchedule = {
                 "Type": {},
@@ -65,7 +64,7 @@ for i in range(len(schedule[1:])):
         gameSchedule['Location'][i+1] = rink.getText()
 
 df = pd.DataFrame(gameSchedule)
-df.to_csv(OUTPUT_FILE_NAME, index=False)
+df.to_csv(fileName, index=False)
 
 if EMAIL and PASSWORD:
     driver.get("https://www.benchapp.com/schedule/import")
@@ -75,7 +74,7 @@ if EMAIL and PASSWORD:
     driver.find_element(By.XPATH, "/html/body/div[1]/div[2]/div[1]/div/div[2]/div/form/div[3]/span/button").click()
     WebDriverWait(driver, 30).until(EC.url_changes(current_url))
     browse = driver.find_element(By.XPATH, "/html/body/div[1]/div[7]/section/div[2]/div/div/section/div[1]/div/div[2]/div/label/input")
-    browse.send_keys(f"{os.getcwd()}/{OUTPUT_FILE_NAME}")
+    browse.send_keys(f"{os.getcwd()}/{fileName}")
     time.sleep(5)
     driver.find_element(By.XPATH, "/html/body/div[1]/div[7]/section/div[2]/div/div/section/div[1]/div/div[3]/div[2]/div/div/div[3]/div/div[2]/button[2]/span").click()
     time.sleep(5)
