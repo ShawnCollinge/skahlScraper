@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 load_dotenv()
 
-TEAM_ID =  "2200" # enter team url here for the season
+TEAM_ID =  "2200" # enter team number
 GAME_DURATION = "1:30"
 TYPE = "GAME"
 
