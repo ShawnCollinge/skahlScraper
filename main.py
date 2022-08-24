@@ -74,5 +74,6 @@ if EMAIL and PASSWORD:
     driver.find_element(By.XPATH, "/html/body/div[1]/div[7]/section/div[2]/div/div/section/div[1]/div/div[3]/div[2]/div/div/div[3]/div/div[2]/button[2]/span").click()
     time.sleep(5)
 
+os.remove(fileName) 
 driver.close()
 print("Done!")
