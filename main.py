@@ -9,7 +9,7 @@ import pandas as pd
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-TEAM_URL =  "https://snokinghockeyleague.com/#/home/team/1081/2609" # enter team url here for the season
+TEAM_URL =  "1081/2609" # enter team url here for the season
 GAME_DURATION = "1:30"
 TYPE = "GAME"
 GAME_TYPE = "REGULAR"
