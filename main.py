@@ -8,24 +8,28 @@ from selenium.webdriver.chrome.service import Service
 import pandas as pd
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from dotenv import load_dotenv
+load_dotenv()
 
-TEAM_URL =  "1081/2609" # enter team url here for the season
+TEAM_ID =  "2200" # enter team url here for the season
 GAME_DURATION = "1:30"
 TYPE = "GAME"
-GAME_TYPE = "REGULAR"
-EMAIL = ""
-PASSWORD = ""
 
-options = Options()
-options.headless = True
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+def find_season(seasons):
+    for season in seasons:
+        if "skahl" in season['name'].lower():
+            return season
 
-TEAM_URL = TEAM_URL.split("/")
-team = TEAM_URL[-1]
-season = TEAM_URL[-2]
-url = f"https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/game/list/{season}/0/{team}"
+def is_playoffs(season):
+    return "playoffs" in season['name'].lower() 
 
-fileName = f"{team}.csv"
+response = requests.get("https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/season/all/0")
+seasons = response.json()['seasons']
+
+season = find_season(seasons)
+gameType = "PLAYOFF" if is_playoffs(season) else "REGULAR"
+url = f"https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/game/list/{season['id']}/0/{TEAM_ID}"
+fileName = f"{TEAM_ID}.csv"
 
 response = requests.get(url)
 schedule = response.json()
@@ -41,30 +45,37 @@ gameSchedule = {
                 "Duration": {},
                 "Location": {},
                 }
-                
-today = datetime.now()
+
+with open("recentDate.txt", "r") as f:
+    recentDate = datetime.strptime(f.read(), "%d/%m/%Y")
+
 for i in range(len(schedule)):
     game = schedule[i]
     date = datetime.strptime(game['date'], "%m/%d/%Y")
-    if date.date() > today.date():
+    if date.date() > recentDate.date():
         gameSchedule['Title'][i+1] = ""
         gameSchedule['Type'][i+1] = TYPE
-        gameSchedule['Game Type'][i+1] = GAME_TYPE
+        gameSchedule['Game Type'][i+1] = gameType
         gameSchedule['Home'][i+1] = game['teamHomeName']
         gameSchedule['Away'][i+1] = game['teamAwayName']
-        gameSchedule['Date'][i+1] = date.strftime("%d/%m/%Y")
+        gameSchedule['Date'][i+1] = savedDate = date.strftime("%d/%m/%Y")
         gameSchedule['Time'][i+1] = game['time']
         gameSchedule['Duration'][i+1] = GAME_DURATION
         gameSchedule['Location'][i+1] = game['rinkName']
+        recentDate = date
 
 
-df = pd.DataFrame(gameSchedule)
-df.to_csv(fileName, index=False)
+if len(gameSchedule['Title']) > 0:
+    df = pd.DataFrame(gameSchedule)
+    df.to_csv(fileName, index=False)
 
-if EMAIL and PASSWORD:
+    options = Options()
+    options.headless = True
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
     driver.get("https://www.benchapp.com/schedule/import")
-    driver.find_element(By.NAME, "email").send_keys(EMAIL)
-    driver.find_element(By.NAME, "password").send_keys(PASSWORD)
+    driver.find_element(By.NAME, "email").send_keys(os.getenv('EMAIL'))
+    driver.find_element(By.NAME, "password").send_keys(os.getenv('PASSWORD'))
     current_url = driver.current_url
     driver.find_element(By.XPATH, "/html/body/div[1]/div[2]/div[1]/div/div[2]/div/form/div[3]/span/button").click()
     WebDriverWait(driver, 30).until(EC.url_changes(current_url))
@@ -74,6 +85,7 @@ if EMAIL and PASSWORD:
     driver.find_element(By.XPATH, "/html/body/div[1]/div[7]/section/div[2]/div/div/section/div[1]/div/div[3]/div[2]/div/div/div[3]/div/div[2]/button[2]/span").click()
     time.sleep(5)
 
-os.remove(fileName) 
-driver.close()
-print("Done!")
+    os.remove(fileName) 
+    driver.close()
+    with open("recentDate.txt", "w") as f:
+        f.write(savedDate)
