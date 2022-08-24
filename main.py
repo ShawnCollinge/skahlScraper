@@ -23,6 +23,8 @@ def find_season(seasons):
 def is_playoffs(season):
     return "playoffs" in season['name'].lower() 
 
+scriptPath = os.path.dirname(__file__)
+
 response = requests.get("https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/season/all/0")
 seasons = response.json()['seasons']
 
@@ -46,7 +48,7 @@ gameSchedule = {
                 "Location": {},
                 }
 
-with open("recentDate.txt", "r") as f:
+with open(f"{scriptPath}/recentDate.txt", "r") as f:
     recentDate = datetime.strptime(f.read(), "%d/%m/%Y")
 
 for i in range(len(schedule)):
@@ -67,7 +69,7 @@ for i in range(len(schedule)):
 
 if len(gameSchedule['Title']) > 0:
     df = pd.DataFrame(gameSchedule)
-    df.to_csv(fileName, index=False)
+    df.to_csv(f"{scriptPath}/{fileName}", index=False)
 
     options = Options()
     options.headless = True
@@ -80,12 +82,12 @@ if len(gameSchedule['Title']) > 0:
     driver.find_element(By.XPATH, "/html/body/div[1]/div[2]/div[1]/div/div[2]/div/form/div[3]/span/button").click()
     WebDriverWait(driver, 30).until(EC.url_changes(current_url))
     browse = driver.find_element(By.XPATH, "/html/body/div[1]/div[7]/section/div[2]/div/div/section/div[1]/div/div[2]/div/label/input")
-    browse.send_keys(f"{os.getcwd()}/{fileName}")
+    browse.send_keys(f"{scriptPath}/{fileName}")
     time.sleep(5)
     driver.find_element(By.XPATH, "/html/body/div[1]/div[7]/section/div[2]/div/div/section/div[1]/div/div[3]/div[2]/div/div/div[3]/div/div[2]/button[2]/span").click()
     time.sleep(5)
 
-    os.remove(fileName) 
+    os.remove(f"{scriptPath}/{fileName}") 
     driver.close()
-    with open("recentDate.txt", "w") as f:
+    with open(f"{scriptPath}/recentDate.txt", "w") as f:
         f.write(savedDate)
