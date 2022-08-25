@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TEAM_ID =  "2200" # enter team number
-GAME_DURATION = "1:30"
+GAME_DURATION = "1:15"
 TYPE = "GAME"
 
 def find_season(seasons):
