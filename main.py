@@ -23,19 +23,6 @@ def find_season(seasons):
 def is_playoffs(season):
     return "playoffs" in season['name'].lower() 
 
-scriptPath = os.path.dirname(__file__)
-
-response = requests.get("https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/season/all/0")
-seasons = response.json()['seasons']
-
-season = find_season(seasons)
-gameType = "PLAYOFF" if is_playoffs(season) else "REGULAR"
-url = f"https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/game/list/{season['id']}/0/{TEAM_ID}"
-fileName = f"{TEAM_ID}.csv"
-
-response = requests.get(url)
-schedule = response.json()
-
 gameSchedule = {
                 "Type": {},
                 "Game Type": {},
@@ -48,8 +35,21 @@ gameSchedule = {
                 "Location": {},
                 }
 
-with open(f"{scriptPath}/recentDate.txt", "r") as f:
-    recentDate = datetime.strptime(f.read(), "%d/%m/%Y")
+scriptPath = os.path.dirname(__file__)
+response = requests.get("https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/season/all/0")
+seasons = response.json()['seasons']
+season = find_season(seasons)
+gameType = "PLAYOFF" if is_playoffs(season) else "REGULAR"
+url = f"https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/game/list/{season['id']}/0/{TEAM_ID}"
+fileName = f"{TEAM_ID}.csv"
+response = requests.get(url)
+schedule = response.json()
+
+try:
+    df = pd.read_csv(f"{scriptPath}/{fileName}")
+    recentDate = datetime.strptime(df['Date'].iloc[-1], "%d/%m/%Y")
+except:
+    recentDate = datetime.now()
 
 for i in range(len(schedule)):
     game = schedule[i]
@@ -67,8 +67,7 @@ for i in range(len(schedule)):
 
 if len(gameSchedule['Title']) > 0:
     df = pd.DataFrame(gameSchedule)
-    df.to_csv(f"{scriptPath}/{fileName}", index=False)
-
+    df.to_csv(f"{scriptPath}/{fileName}", index=False
     options = Options()
     options.headless = True
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -84,8 +83,4 @@ if len(gameSchedule['Title']) > 0:
     time.sleep(5)
     driver.find_element(By.XPATH, "/html/body/div[1]/div[7]/section/div[2]/div/div/section/div[1]/div/div[3]/div[2]/div/div/div[3]/div/div[2]/button[2]/span").click()
     time.sleep(5)
-
-    os.remove(f"{scriptPath}/{fileName}") 
     driver.close()
-    with open(f"{scriptPath}/recentDate.txt", "w") as f:
-        f.write(savedDate)
