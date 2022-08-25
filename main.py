@@ -64,8 +64,6 @@ for i in range(len(schedule)):
         gameSchedule['Time'][i+1] = game['time']
         gameSchedule['Duration'][i+1] = GAME_DURATION
         gameSchedule['Location'][i+1] = game['rinkName']
-        recentDate = date
-
 
 if len(gameSchedule['Title']) > 0:
     df = pd.DataFrame(gameSchedule)
