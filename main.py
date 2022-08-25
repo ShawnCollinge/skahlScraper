@@ -67,7 +67,7 @@ for i in range(len(schedule)):
 
 if len(gameSchedule['Title']) > 0:
     df = pd.DataFrame(gameSchedule)
-    df.to_csv(f"{scriptPath}/{fileName}", index=False
+    df.to_csv(f"{scriptPath}/{fileName}", index=False)
     options = Options()
     options.headless = True
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
