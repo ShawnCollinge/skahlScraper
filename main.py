@@ -1,4 +1,4 @@
-import time, os, requests
+import time, os, requests, smtplib
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -11,9 +11,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 load_dotenv()
 
-TEAM_ID =  "2200" # enter team number
+TEAM_ID =  2706 # enter team number
 GAME_DURATION = "1:15"
 TYPE = "GAME"
+SEASON_ID = 1082
+TEAM_NAME = "warriors"
 
 def find_season(seasons):
     for season in seasons:
@@ -23,7 +25,33 @@ def find_season(seasons):
 def is_playoffs(season):
     return "playoffs" in season['name'].lower() 
 
-gameSchedule = {
+def email_for_error(theMessage):
+    conn = smtplib.SMTP('smtp.gmail.com', 587)
+    conn.ehlo()
+    conn.starttls()
+    conn.login(os.getenv('FROM_EMAIL'), os.getenv('FROM_EMAIL_PASSWORD'))
+    conn.sendmail(os.getenv('FROM_EMAIL'), os.getenv('EMAIL'), f"Subject: Schedule conflict found \n\n {theMessage}")
+    conn.quit()
+
+scriptPath = os.path.dirname(__file__)
+# response = requests.get("https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/season/all/0")
+# seasons = response.json()['seasons']
+# season = find_season(seasons)
+# gameType = "PLAYOFF" if is_playoffs(season) else "REGULAR"
+gameType = "REGULAR"
+url = f"https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/game/list/{SEASON_ID}/0/{TEAM_ID}"
+fileName = f"{TEAM_ID}.csv"
+response = requests.get(url)
+schedule = response.json()
+
+
+try:
+    df = pd.read_csv(f"{scriptPath}/{fileName}")
+    recentDate = datetime.strptime(df['Date'].iloc[-1], "%d/%m/%Y")
+    gameSchedule = df.to_dict()
+except:
+    recentDate = datetime.now()
+    gameSchedule = {
                 "Type": {},
                 "Game Type": {},
                 "Title": {},
@@ -33,39 +61,33 @@ gameSchedule = {
                 "Time": {},
                 "Duration": {},
                 "Location": {},
+                "Notes": {},
                 }
 
-scriptPath = os.path.dirname(__file__)
-response = requests.get("https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/season/all/0")
-seasons = response.json()['seasons']
-season = find_season(seasons)
-gameType = "PLAYOFF" if is_playoffs(season) else "REGULAR"
-url = f"https://api.codetabs.com/v1/proxy/?quest=https://snokinghockeyleague.com/api/game/list/{season['id']}/0/{TEAM_ID}"
-fileName = f"{TEAM_ID}.csv"
-response = requests.get(url)
-schedule = response.json()
-
-try:
-    df = pd.read_csv(f"{scriptPath}/{fileName}")
-    recentDate = datetime.strptime(df['Date'].iloc[-1], "%d/%m/%Y")
-except:
-    recentDate = datetime.now()
+needsUpdate = False
 
 for i in range(len(schedule)):
     game = schedule[i]
     date = datetime.strptime(game['date'], "%m/%d/%Y")
-    if date.date() > recentDate.date():
-        gameSchedule['Title'][i+1] = ""
-        gameSchedule['Type'][i+1] = TYPE
-        gameSchedule['Game Type'][i+1] = gameType
-        gameSchedule['Home'][i+1] = game['teamHomeName']
-        gameSchedule['Away'][i+1] = game['teamAwayName']
-        gameSchedule['Date'][i+1] = savedDate = date.strftime("%d/%m/%Y")
-        gameSchedule['Time'][i+1] = game['time']
-        gameSchedule['Duration'][i+1] = GAME_DURATION
-        gameSchedule['Location'][i+1] = game['rinkName']
+    errorState = False
+    if date < recentDate:
+        errorState = (gameSchedule['Home'][i] != game['teamHomeName'] or gameSchedule['Away'][i] != game['teamAwayName'] or gameSchedule['Time'][i] != game['time'])
+    if errorState:
+        email_for_error(f"Error for game on {date.strftime('%m/%d/%Y')} {gameSchedule['Away'][i]} @ {gameSchedule['Home'][i]}")
+    if errorState or date > recentDate:   
+        needsUpdate = True 
+        gameSchedule['Title'][i] = ""
+        gameSchedule['Type'][i] = TYPE
+        gameSchedule['Game Type'][i] = gameType
+        gameSchedule['Home'][i] = game['teamHomeName']
+        gameSchedule['Away'][i] = game['teamAwayName']
+        gameSchedule['Date'][i] = savedDate = date.strftime("%d/%m/%Y")
+        gameSchedule['Time'][i] = game['time']
+        gameSchedule['Duration'][i] = GAME_DURATION
+        gameSchedule['Location'][i] = game['rinkName']
+        gameSchedule['Notes'] = "Dark sweaters" if TEAM_NAME in game['teamHomeName'].lower() else "Light sweaters"
 
-if len(gameSchedule['Title']) > 0:
+if needsUpdate:
     df = pd.DataFrame(gameSchedule)
     df.to_csv(f"{scriptPath}/{fileName}", index=False)
     options = Options()
