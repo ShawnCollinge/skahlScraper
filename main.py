@@ -14,7 +14,7 @@ load_dotenv()
 TEAM_ID =  2706 # enter team number
 GAME_DURATION = "1:15"
 TYPE = "GAME"
-SEASON_ID = 1082
+SEASON_ID = 1086
 TEAM_NAME = "warriors"
 
 def find_season(seasons):
@@ -61,6 +61,7 @@ except:
                 "Time": {},
                 "Duration": {},
                 "Location": {},
+                "Address": {},
                 "Notes": {},
                 }
 
@@ -85,7 +86,8 @@ for i in range(len(schedule)):
         gameSchedule['Time'][i] = game['time']
         gameSchedule['Duration'][i] = GAME_DURATION
         gameSchedule['Location'][i] = game['rinkName']
-        gameSchedule['Notes'] = "Dark sweaters" if TEAM_NAME in game['teamHomeName'].lower() else "Light sweaters"
+        gameSchedule['Address'][i] = ""
+        gameSchedule['Notes'][i] = "Light sweaters" if TEAM_NAME in game['teamHomeName'].lower() else "Dark sweaters"
 
 if needsUpdate:
     df = pd.DataFrame(gameSchedule)
